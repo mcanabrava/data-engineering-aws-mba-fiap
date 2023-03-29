@@ -5,14 +5,14 @@ The 8ABDO - Fase 3 - Solution Sprint.pdf contains the original challenge file. T
 
 The dataset choosed for this project is the [TBD]
 
-##### Challenge 1 -  Manual Ingestion
+## Challenge 1 -  Manual Ingestion
 
 For the manual ingestion an example can be seen in Figure “AWS
 Manual Ingest”, where a Cloud9 Env environment has AWS CLI and scripts written
 in Python to convert and send files, and AWS Services highlighted
 for some Amazon S3 functionality and technologies.
 
-https://github.com/mcanabrava/fiap-data-engineering-sprint3-aws/blob/main/imgs/manual_ingestion.png
+![EventsIngestion](imgs/manual_ingestion.png)
 
 An AWS Cloud9 environment is a place to store your
 project and where to run the tools to develop your applications. You
@@ -34,16 +34,14 @@ features including improved installers, new configuration options,
 such as AWS Single Sign-On (SSO) and various interactive features. This project uses CLI to work with S3, SQS and Firehose. In this challenge, python code is run manually to support the application functioning.
 
 
-##### Challenge 2 -  Event based Ingestion
+## Challenge 2 -  Event based Ingestion
 
 This project aims to automate the manual workload from the previous project by replacing the python code that has to be run manually by lambda events according to the following architecture:
 
-https://github.com/mcanabrava/fiap-data-engineering-sprint3-aws/blob/main/imgs/events_ingestion.png
-
 ![EventsIngestion](imgs/events_ingestion.png)
 
-##### Challenge 3 -  Analysing data
+## Challenge 3 -  Analysing data
 
 Glue and Athena are added to our project to enable queyring information directly from S3 buckets.
 
-https://github.com/mcanabrava/fiap-data-engineering-sprint3-aws/blob/main/imgs/reading_data.png
+![ReadinData](imgs/reading_data.png)
