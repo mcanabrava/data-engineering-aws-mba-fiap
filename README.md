@@ -1,7 +1,9 @@
 # fiap-data-engineering-sprint3-aws
 This repository contains the solution for the FIAP - MBA Data Engineering Sprint 3 AWS Challenge. 
 
-The 8ABDO - Fase 3 - Solution Sprint.pdf contains the original challenge file. This challenge is composed by 3 sub-challanges, as explained below. The code to set-up each sub-challenge solution can be found in individual folders and further explanation is provided in individual read me files.
+The 8ABDO - Fase 3 - Solution Sprint.pdf contains the original challenge file. This challenge is composed of 3 sub-challanges, as explained below. The code to set-up each sub-challenge solution can be found in individual folders and further explanation is provided in individual read me files.
+
+The dataset choosed for this project is the [TBD]
 
 ##### Challenge 1 -  Manual Ingestion
 
@@ -37,6 +39,8 @@ such as AWS Single Sign-On (SSO) and various interactive features. This project 
 This project aims to automate the manual workload from the previous project by replacing the python code that has to be run manually by lambda events according to the following architecture:
 
 https://github.com/mcanabrava/fiap-data-engineering-sprint3-aws/blob/main/imgs/events_ingestion.png
+
+![EventsIngestion](imgs/events_ingestion.png)
 
 ##### Challenge 3 -  Analysing data
 
