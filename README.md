@@ -42,6 +42,6 @@ This project aims to automate the manual workload from the previous project by r
 
 ## Challenge 3 -  Analysing data
 
-Glue and Athena are added to our project to enable queyring information directly from S3 buckets.
+Glue and Athena are added to our project to enable queyring information directly from our data lake S3 buckets from different zones (raw, transient, enriched).
 
 ![ReadinData](imgs/reading_data.png)
