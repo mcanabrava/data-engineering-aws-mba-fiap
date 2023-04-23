@@ -5,6 +5,11 @@ The 8ABDO - Fase 3 - Solution Sprint.pdf contains the original challenge file. T
 
 The dataset choosed for this project is the [TBD]
 
+URL:
+Metadata:
+Size:
+Others:
+
 ## Challenge 1 -  Manual Ingestion
 
 For the manual ingestion an example can be seen in Figure “AWS
