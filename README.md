@@ -3,12 +3,7 @@ This repository contains the solution for the FIAP - MBA Data Engineering Sprint
 
 The 8ABDO - Fase 3 - Solution Sprint.pdf contains the original challenge file. This challenge is composed of 3 sub-challanges, as explained below. The code to set-up each sub-challenge solution can be found in individual folders and further explanation is provided in individual read me files.
 
-The dataset choosed for this project is the [TBD]
-
-URL:
-Metadata:
-Size:
-Others:
+The dataset choosed for this project can be find here: https://www.kaggle.com/olistbr/brazilian-ecommerce
 
 ## Challenge 1 -  Manual Ingestion
 
