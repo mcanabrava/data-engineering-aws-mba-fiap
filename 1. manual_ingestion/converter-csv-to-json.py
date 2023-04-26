@@ -38,7 +38,7 @@ for obj in response['Contents']:
 
 # Wait for 5 seconds to ensure messages have been delivered to SQS
 print("Preparing to retrieve messages...")
-time.sleep(3)
+time.sleep(5)
 
 
 response = sqs.receive_message(QueueUrl='https://sqs.us-east-2.amazonaws.com/785163354234/csv-to-json', MaxNumberOfMessages=10)
@@ -48,34 +48,34 @@ for message in response.get('Messages', []):
     file_name = json.loads(message['Body'])['file_name']
     print(f"Found message for: {file_name}")
             
-# Process messages and deliver them to the destination S3 bucket via Kinesis Firehose
+# Loop through all messages
 for message in response.get('Messages', []):
     try:
         # Get file name from message
         file_name = json.loads(message['Body'])['file_name']
         
-        # Check if file exists in destination bucket
-        if check_file_exists('raw-json-ecommerce-dataset-fiap-grupo-c', file_name):
+         # Check if file exists in destination bucket
+        if check_file_exists('raw-json-ecommerce-dataset-fiap-grupo-c', file_name.replace('.csv', '.json')):
             print(f'File {file_name} already exists in destination bucket')
         else:
-            # Send file to Kinesis Firehose for delivery to destination S3 bucket
-            delivery_stream = 'json-to-s3-firehose'
-            record = {'Data': f's3://raw-json-ecommerce-dataset-fiap-grupo-c/{file_name}'}
-            firehose = boto3.client('firehose')
-            response = firehose.put_record(DeliveryStreamName=delivery_stream, Record=record)
-            print(f"Sent file {file_name} to Kinesis Firehose for delivery")
-        
-        # Delete message from SQS queue
-        sqs.delete_message(QueueUrl='https://sqs.us-east-2.amazonaws.com/785163354234/json-to-firehose', ReceiptHandle=message['ReceiptHandle'])
-
+            # Download CSV file from S3
+            csv_obj = s3.get_object(Bucket='raw-csv-ecommerce-dataset-fiap-grupo-c', Key=file_name)
+            csv_data = csv_obj['Body'].read().decode('utf-8')
+    
+            # Convert CSV to JSON
+            csv_reader = csv.DictReader(csv_data.splitlines())
+            json_data = json.dumps(list(csv_reader))
+    
+            # Upload JSON file to S3
+            s3.put_object(Bucket='raw-json-ecommerce-dataset-fiap-grupo-c', Key=file_name.replace('.csv', '.json'), Body=json_data)
+    
+            # Print success message
+            print(f"Successfully uploaded {file_name} in json format")
     except Exception as e:
-        print(f"Error processing message: {e}")
-
-# Flush records from Kinesis Firehose
-try:
-    response = firehose.flush_delivery_stream(DeliveryStreamName='json-to-s3-firehose')
-    print(f"Flushed records from Kinesis Firehose")
-except Exception as e:
-    print(f"Error flushing records from Kinesis Firehose: {e}")
+            # Print error message
+            print(f"Error processing {file_name}: {e}")
+    
+            # Delete message from SQS queue
+            sqs.delete_message(QueueUrl='https://sqs.us-east-2.amazonaws.com/785163354234/json-to-firehose', ReceiptHandle=message['ReceiptHandle'])
 
 print("Process completed")

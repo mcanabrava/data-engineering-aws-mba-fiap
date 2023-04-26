@@ -37,9 +37,9 @@ for obj in files:
         except Exception as e:
             print(f"Error sending message to SQS queue for file {obj['Key']}: {e}")
 
-# Wait for 30 seconds to ensure records have been delivered to SQS
+# Wait seconds to ensure records have been delivered to SQS
 print("Preparing to retrieve messages in 10 seconds")
-time.sleep(10)
+time.sleep(30)
 print("Retrieving messages...")
 
 # Retrieve messages from SQS queue
@@ -55,7 +55,6 @@ for message in response.get('Messages', []):
     try:
         # Get file name from message
         file_name = json.loads(message['Body'])['file_name']
-        print(f"Preparing to process {file_name}")
         
         # Check if file exists in destination bucket
         if check_file_exists('ingested-json-ecommerce-dataset-fiap-grupo-c', file_name):
@@ -63,7 +62,7 @@ for message in response.get('Messages', []):
         else:
             # Send file to Kinesis Firehose for delivery to destination S3 bucket
             delivery_stream = 'PUT-S3-ingestion'
-            record = {'Data': f's3://ingested-json-ecommerce-dataset-fiap-grupo-c/{file_name}'}
+            record = {'Data': f's3://raw-json-ecommerce-dataset-fiap-grupo-c/{file_name}'}
             firehose = boto3.client('firehose')
             response = firehose.put_record(DeliveryStreamName=delivery_stream, Record=record)
             print(f"Sent file {file_name} to Kinesis Firehose for delivery")
@@ -73,3 +72,12 @@ for message in response.get('Messages', []):
 
     except Exception as e:
         print(f"Error processing message: {e}")
+
+# Flush records from Kinesis Firehose
+try:
+    response = firehose.flush_delivery_stream(DeliveryStreamName='PUT-S3-ingestion')
+    print(f"Flushed records from Kinesis Firehose")
+except Exception as e:
+    print(f"Error flushing records from Kinesis Firehose: {e}")
+
+print("Process completed")
