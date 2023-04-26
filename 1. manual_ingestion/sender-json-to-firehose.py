@@ -39,11 +39,15 @@ for obj in files:
 
 # Wait seconds to ensure records have been delivered to SQS
 print("Preparing to retrieve messages in 10 seconds")
-time.sleep(30)
+time.sleep(10)
 print("Retrieving messages...")
 
+
 # Retrieve messages from SQS queue
-response = sqs.receive_message(QueueUrl='https://sqs.us-east-2.amazonaws.com/785163354234/json-to-firehose', MaxNumberOfMessages=10)
+response = sqs.receive_message(QueueUrl='https://sqs.us-east-2.amazonaws.com/785163354234/json-to-firehose', MaxNumberOfMessages=10,
+    VisibilityTimeout=50,
+    WaitTimeSeconds=20,
+    MessageAttributeNames=['All'])
 
 print("We have identified the following messages in the SQS:")
 for message in response.get('Messages', []):
@@ -72,12 +76,3 @@ for message in response.get('Messages', []):
 
     except Exception as e:
         print(f"Error processing message: {e}")
-
-# Flush records from Kinesis Firehose
-try:
-    response = firehose.flush_delivery_stream(DeliveryStreamName='PUT-S3-ingestion')
-    print(f"Flushed records from Kinesis Firehose")
-except Exception as e:
-    print(f"Error flushing records from Kinesis Firehose: {e}")
-
-print("Process completed")

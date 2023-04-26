@@ -68,6 +68,9 @@ for message in response.get('Messages', []):
     
             # Upload JSON file to S3
             s3.put_object(Bucket='raw-json-ecommerce-dataset-fiap-grupo-c', Key=file_name.replace('.csv', '.json'), Body=json_data)
+            
+            # Delete message from SQS queue
+            sqs.delete_message(QueueUrl='https://sqs.us-east-2.amazonaws.com/785163354234/json-to-firehose', ReceiptHandle=message['ReceiptHandle'])
     
             # Print success message
             print(f"Successfully uploaded {file_name} in json format")
