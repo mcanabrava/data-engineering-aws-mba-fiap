@@ -58,11 +58,11 @@ while True:
 
     message = response['Messages'][0]
     
-    print(f"found message for file {message}")
     
     try:
         # Get file name from message
         file_name = json.loads(message['Body'])['file_name']
+        print(f"found message for file {file_name}")
         
         # Check if file exists in destination bucket
         if check_file_exists('raw-json-ecommerce-dataset-fiap-grupo-c', file_name.replace('.csv', '.json')):
