@@ -40,23 +40,33 @@ for obj in response['Contents']:
 print("Preparing to retrieve messages...")
 time.sleep(5)
 
-
-response = sqs.receive_message(QueueUrl='https://sqs.us-east-2.amazonaws.com/785163354234/csv-to-json', MaxNumberOfMessages=10)
-
 # Printing existing messages
 for message in response.get('Messages', []):
     file_name = json.loads(message['Body'])['file_name']
     print(f"Found message for: {file_name}")
             
-# Loop through all messages
-for message in response.get('Messages', []):
+while True:
+    # Receive messages from SQS
+    response = sqs.receive_message(
+        QueueUrl='https://sqs.us-east-2.amazonaws.com/785163354234/csv-to-json',
+        MaxNumberOfMessages=1
+    )
+
+    # Check if there are no more messages
+    if 'Messages' not in response:
+        break
+
+    message = response['Messages'][0]
+    
+    print(f"found message for file {message}")
+    
     try:
         # Get file name from message
         file_name = json.loads(message['Body'])['file_name']
         
-         # Check if file exists in destination bucket
+        # Check if file exists in destination bucket
         if check_file_exists('raw-json-ecommerce-dataset-fiap-grupo-c', file_name.replace('.csv', '.json')):
-            print(f'File {file_name} already exists in destination bucket')
+            print(f'File {file_name} already exists in the destination bucket')
         else:
             # Download CSV file from S3
             csv_obj = s3.get_object(Bucket='raw-csv-ecommerce-dataset-fiap-grupo-c', Key=file_name)
@@ -70,15 +80,22 @@ for message in response.get('Messages', []):
             s3.put_object(Bucket='raw-json-ecommerce-dataset-fiap-grupo-c', Key=file_name.replace('.csv', '.json'), Body=json_data)
             
             # Delete message from SQS queue
-            sqs.delete_message(QueueUrl='https://sqs.us-east-2.amazonaws.com/785163354234/json-to-firehose', ReceiptHandle=message['ReceiptHandle'])
+            sqs.delete_message(
+                QueueUrl='https://sqs.us-east-2.amazonaws.com/785163354234/csv-to-json',
+                ReceiptHandle=message['ReceiptHandle']
+            )
     
             # Print success message
-            print(f"Successfully uploaded {file_name} in json format")
+            print(f"Successfully uploaded {file_name} in JSON format")
     except Exception as e:
-            # Print error message
-            print(f"Error processing {file_name}: {e}")
-    
-            # Delete message from SQS queue
-            sqs.delete_message(QueueUrl='https://sqs.us-east-2.amazonaws.com/785163354234/json-to-firehose', ReceiptHandle=message['ReceiptHandle'])
+        # Print error message
+        print(f"Error processing {file_name}: {e}")
+        
+        # Delete message from SQS queue
+        sqs.delete_message(
+            QueueUrl='https://sqs.us-east-2.amazonaws.com/785163354234/csv-to-json',
+            ReceiptHandle=message['ReceiptHandle']
+        )
+
 
 print("Process completed")
