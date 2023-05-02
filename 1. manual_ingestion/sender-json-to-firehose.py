@@ -5,28 +5,6 @@ import time
 import math
 from botocore.exceptions import ClientError
 
-# Define function to check if file exists in S3 bucket
-import boto3
-
-def check_file_exists(bucket, key):
-    s3 = boto3.client('s3')
-    
-    # Recursive function to search for the file in the bucket
-    def search_file(prefix):
-        objects = s3.list_objects_v2(Bucket='ingested-json-ecommerce-dataset-fiap-grupo-c', Prefix=prefix)
-        for obj in objects.get('Contents', []):
-            if obj['Key'] == key:
-                return True
-            if obj['Key'].endswith('/'):
-                # Recursively search within the nested folder
-                if search_file(obj['Key']):
-                    return True
-        return False
-    
-    # Start the recursive search from the root folder
-    return search_file('')
-
-
 # Initialize S3 and SQS clients
 s3 = boto3.client('s3')
 firehose = boto3.client('firehose')
@@ -79,27 +57,49 @@ def create_firehose_records(bucket_name, file_name):
         response = s3.get_object(Bucket=bucket_name, Key=file_name)
         json_content = response['Body'].read().decode('utf-8')
 
-        # Split JSON content into chunks
-        max_chunk_size = 3 * 1024  # Maximum chunk size of 3 MB
-        chunks = split_json_into_chunks(json_content, max_chunk_size)
-        
-        # Create a list of records to send
-        records = [{'Data': chunk} for chunk in chunks]
+        # Parse the JSON content
+        data = json.loads(json_content)
 
-        # Send JSON records to Kinesis Firehose for delivery
-        response = firehose.put_record_batch(
-            DeliveryStreamName='PUT-S3-ingestion',
-            Records=records
-        )
-        
-        if response['FailedPutCount'] > 0:
-            print(f"Some records failed to deliver to Kinesis Firehose for file {file_name}")
-        else:
-            print(f"All records delivered successfully for file {file_name}")
-        
+        # Split the data into smaller chunks
+        max_records_per_batch = 100  # Adjust this value as needed
+        chunks = [data[i:i + max_records_per_batch] for i in range(0, len(data), max_records_per_batch)]
+
+        # Create a list of record batches to send
+        record_batches = []
+        for chunk in chunks:
+            records = [{'Data': json.dumps(row)} for row in chunk]
+            record_batches.append(records)
+
+        # Send record batches to Kinesis Firehose for delivery
+        for records in record_batches:
+            response = firehose.put_record_batch(
+                DeliveryStreamName='PUT-S3-ingestion',
+                Records=records
+            )
+
+            if response['FailedPutCount'] > 0:
+                print(f"Some records failed to deliver to Kinesis Firehose for file {file_name}")
+            else:
+                print(f"Some records delivered successfully for file {file_name}")
+
+        # Handle remaining records (less than max_records_per_batch)
+        remaining_records = data[len(record_batches) * max_records_per_batch:]
+        if remaining_records:
+            records = [{'Data': json.dumps(row)} for row in remaining_records]
+            response = firehose.put_record_batch(
+                DeliveryStreamName='PUT-S3-ingestion',
+                Records=records
+            )
+
+            if response['FailedPutCount'] > 0:
+                print(f"Some remaining records failed to deliver to Kinesis Firehose for file {file_name}")
+            else:
+                print(f"All remaining records delivered successfully for file {file_name}")
+
     except ClientError as e:
         print(f"Error creating Firehose record for file {file_name}: {e}")
         raise
+
 
 # Retrieve messages from SQS queue
 while True:
@@ -125,21 +125,17 @@ while True:
             # Get file name from message
             file_name = json.loads(message['Body'])['file_name']
 
-            # Check if file exists in source bucket
-            if not check_file_exists('ingested-json-ecommerce-dataset-fiap-grupo-c', file_name):
-                print(f'File {file_name} does not exist in destionation bucket')
+            # Create Firehose record for the file
+            create_firehose_records('raw-json-ecommerce-dataset-fiap-grupo-c', file_name)
+            print(f'{file_name} uploaded to the bucket')
 
-                # Create Firehose record for the file
-                create_firehose_records('raw-json-ecommerce-dataset-fiap-grupo-c', file_name)
-                print(f'{file_name} uploaded to the bucket')
-    
-                # Delete message from SQS queue
-                sqs.delete_message(
-                    QueueUrl='https://sqs.us-east-2.amazonaws.com/785163354234/json-to-firehose',
-                    ReceiptHandle=message['ReceiptHandle']
-                )
-            
-            print(f'{file_name} already exists in destionation bucket')
+            # Delete message from SQS queue
+            sqs.delete_message(
+                QueueUrl='https://sqs.us-east-2.amazonaws.com/785163354234/json-to-firehose',
+                ReceiptHandle=message['ReceiptHandle']
+            )
+        
+            print(f'{file_name} was succesfuly created in destionation bucket')
         except Exception as e:
             print(f"Error processing message: {e}")
 
