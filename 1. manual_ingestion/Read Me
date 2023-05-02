@@ -1,6 +1,4 @@
 ## The purpose of this file is to guide the manual ingestion process
 
-1. In one terminal window, run the script that sends messages to the SQS queue: python send_to_sqs.py
-2. In another terminal window, run the script that listens to the SQS queue and uploads the files to the destination bucket: python listen_to_sqs.py
-
-The first script will send messages to the SQS queue containing the destination bucket name, destination key, and JSON data, and the second script will listen to the SQS queue, retrieve the messages, and upload the JSON data to the destination bucket.
+1. In one terminal window, run the script that sends messages to the SQS queue: python converter-csv-to-json.py
+2. After that, run the script that listens to the SQS queue and uploads the files to the destination bucket: python sender-json-to-firehose.py
