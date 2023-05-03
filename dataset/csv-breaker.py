@@ -2,9 +2,11 @@ import os
 import pandas as pd
 import threading
 
-def process_chunk(chunk, output_file):
-    # Write the chunk to a separate CSV file
-    chunk.to_csv(output_file, index=False)
+def process_chunk(chunk, output_file, headers):
+    # Write the headers followed by the chunk to the CSV file
+    with open(output_file, 'w', encoding='utf-8') as f:
+        f.write(headers)
+        chunk.to_csv(f, index=False, header=False, line_terminator='\n')
 
     print(f"Chunk saved to {output_file}")
 
@@ -15,8 +17,12 @@ def split_large_csv(input_file, chunk_size, max_files):
     print("Starting the splitting process...")
 
     try:
+        # Read the headers from the input file
+        with open(input_file, 'r', encoding='utf-8') as f:
+            headers = f.readline()
+
         # Get the total number of rows in the CSV file
-        total_rows = sum(1 for _ in open(input_file, 'r', encoding='utf-8-sig'))
+        total_rows = sum(1 for _ in open(input_file, 'r', encoding='utf-8'))
 
         # Calculate the number of chunks based on the chunk size
         num_chunks = (total_rows - 1) // chunk_size + 1
@@ -34,10 +40,10 @@ def split_large_csv(input_file, chunk_size, max_files):
             print(f"Processing chunk {i}...")
 
             # Read only the required chunk of the CSV file
-            chunk = pd.read_csv(input_file, skiprows=skip_rows, nrows=chunk_size, encoding='utf-8-sig')
+            chunk = pd.read_csv(input_file, skiprows=skip_rows, nrows=chunk_size, encoding='utf-8')
 
             # Create a thread to process the chunk
-            thread = threading.Thread(target=process_chunk, args=(chunk, output_file))
+            thread = threading.Thread(target=process_chunk, args=(chunk, output_file, headers))
             thread.start()
 
             # Add the thread to the list
