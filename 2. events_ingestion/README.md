@@ -1,47 +1,15 @@
-# fiap-data-engineering-sprint3-aws
-This repository contains the solution for the FIAP - MBA Data Engineering Sprint 3 AWS Challenge. 
+## The purpose of this file is to guide the event driven ingestion
 
-The 8ABDO - Fase 3 - Solution Sprint.pdf contains the original challenge file. This challenge is composed of 3 sub-challanges, as explained below. The code to set-up each sub-challenge solution can be found in individual folders and further explanation is provided in individual read me files.
+1. The scripts used in the manual ingestion process should be uploaded into lambdas with specific triggers related to the ingestion process.
+2. The previous scripts were broken down according to the following:
+2.1 converter-csv-to-json was broken into:
+    - converter-csv-to-json-1 that will read from CSV bucket to SQS
+    - converter-csv-to-json-2 that will effectively convert the CSVs to JSONs
+2.2 sender-json-to-firehose was broken into:
+    - sender-json-to-firehose-1 that will read from JSON bucket to SQS
+    - sender-json-to-firehose-2 that will send the JSONs to firehose. 
+ 
+OBS:
 
-The dataset choosed for this project is the [TBD]
-
-## Challenge 1 -  Manual Ingestion
-
-For the manual ingestion an example can be seen in Figure “AWS
-Manual Ingest”, where a Cloud9 Env environment has AWS CLI and scripts written
-in Python to convert and send files, and AWS Services highlighted
-for some Amazon S3 functionality and technologies.
-
-![EventsIngestion](imgs/manual_ingestion.png)
-
-An AWS Cloud9 environment is a place to store your
-project and where to run the tools to develop your applications. You
-can create and switch between multiple environments, with each environment configured
-for a specific development project. By storing the environment in
-cloud, your projects no longer need to be linked to a single
-computer or server configuration. It allows you to do things
-how to easily switch between computers and onboard developers more
-quickly to your team. You can thus work with code in various
-programming languages ​​and the AWS Cloud Development Kit (CDK), use
-online code repositories, collaborate with others in real time,
-interact with various database and website technologies, among others
-possibilities.
-
-AWS CLI, or Command Line Interface, is a unified tool
-for managing AWS services. With command lines it is possible
-control multiple services and automate them using scripts. It has several
-features including improved installers, new configuration options,
-such as AWS Single Sign-On (SSO) and various interactive features. This project uses CLI to work with S3, SQS and Firehose. In this challenge, python code is run manually to support the application functioning.
-
-
-## Challenge 2 -  Event based Ingestion
-
-This project aims to automate the manual workload from the previous project by replacing the python code that has to be run manually by lambda events according to the following architecture:
-
-![EventsIngestion](imgs/events_ingestion.png)
-
-## Challenge 3 -  Analysing data
-
-Glue and Athena are added to our project to enable queyring information directly from our data lake S3 buckets from different zones (raw, transient, enriched).
-
-![ReadinData](imgs/reading_data.png)
+1. Each JSON row is being broken into smaller chunks and being sent as a separate event to firehose. Firehose is then combining chunks into 100MB files before putting them to the final S3 bucket.
+2. Small updates were made to the scripts being used by the lambdas so they could fit the event processing flow
