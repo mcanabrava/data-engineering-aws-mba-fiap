@@ -13,3 +13,4 @@ OBS:
 
 1. Each JSON row is being broken into smaller chunks and being sent as a separate event to firehose. Firehose is then combining chunks into 100MB files before putting them to the final S3 bucket.
 2. Small updates were made to the scripts being used by the lambdas so they could fit the event processing flow
+3. When configuring the lambdas, some adjustments to the default configurations such as increasing timeout and memory might be necessary
