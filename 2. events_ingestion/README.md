@@ -9,12 +9,16 @@
     - sender-json-to-firehose-1 that will read from JSON bucket to SQS
     - sender-json-to-firehose-2 that will send the JSONs to firehose. 
 
+Lambdas inside AWS console:
+![lambdas](../imgs/lambdas.png)
 
 
+Example configuration for read-from-csv-to-sqs lambda (using the converter-csv-to-json-1.py code)
 
+![lambdas](../imgs/lambda_header1.png)
+![lambdas](../imgs/lambda_body2.png)
 
-
-
+The other lambdas should be configured with the additional scripts inside this folder.
 
 
 OBS:
