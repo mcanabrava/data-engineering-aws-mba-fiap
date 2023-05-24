@@ -15,4 +15,4 @@ Additional necessary side configurations to be applied, respectively:
 After completing all the configurations, it should be possible to query the parquet files directly from Athena as exemplified below:
 
 
-![query](imgs/query_example.png)
+![query](../imgs/query_example.png)
