@@ -44,7 +44,7 @@ This project aims to automate the manual workload from the previous project by r
 
 ![EventsIngestion](imgs/events_ingestion.png)
 
-## Challenge 3 -  Analysing data
+## Challenge 3 -  Analyzing data
 
 Glue and Athena are added to our project to enable queyring information directly from our data lake S3 buckets from different zones (raw, transient, enriched).
 
