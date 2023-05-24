@@ -16,7 +16,7 @@ Lambdas inside AWS console:
 Example configuration for read-from-csv-to-sqs lambda (using the converter-csv-to-json-1.py code)
 
 ![lambda_header](../imgs/lambda_header1.png)
-![lambda_body](../imgs/lambda_body2.png)
+![lambda_body](../imgs/lambda_body1.png)
 
 The other lambdas should be configured with the additional scripts inside this folder.
 
