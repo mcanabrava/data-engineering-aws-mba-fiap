@@ -1,13 +1,70 @@
 import boto3
 import os
 import json
-import csv
+import time
+import math
+from botocore.exceptions import ClientError
 
+# Initialize S3 and SQS clients
+s3 = boto3.client('s3')
+firehose = boto3.client('firehose')
+sqs = boto3.client('sqs')
+
+def create_firehose_records(bucket_name, file_name):
+    try:
+        # Read the JSON file from S3
+        response = s3.get_object(Bucket=bucket_name, Key=file_name)
+        print(f"response: {response}")
+        json_content = response['Body'].read().decode('utf-8')
+        print(f"json_content: {json_content}")
+
+        # Parse the JSON content
+        data = json.loads(json_content)
+
+        # Split the data into smaller chunks
+        max_records_per_batch = 100  # Adjust this value as needed
+        chunks = [data[i:i + max_records_per_batch] for i in range(0, len(data), max_records_per_batch)]
+
+        # Create a list of record batches to send
+        record_batches = []
+        for chunk in chunks:
+            records = [{'Data': json.dumps(row)} for row in chunk]
+            record_batches.append(records)
+
+        # Send record batches to Kinesis Firehose for delivery
+        for records in record_batches:
+            print(f"Sending record batch: {records}")
+            response = firehose.put_record_batch(
+                DeliveryStreamName='PUT-S3-ingestion',
+                Records=records
+            )
+
+            if response['FailedPutCount'] > 0:
+                print(f"Some records failed to deliver to Kinesis Firehose for file {file_name}")
+            else:
+                print(f"Some records delivered successfully for file {file_name}")
+
+        # Handle remaining records (less than max_records_per_batch)
+        remaining_records = data[len(record_batches) * max_records_per_batch:]
+        if remaining_records:
+            records = [{'Data': json.dumps(row)} for row in remaining_records]
+            response = firehose.put_record_batch(
+                DeliveryStreamName='PUT-S3-ingestion',
+                Records=records
+            )
+
+            if response['FailedPutCount'] > 0:
+                print(f"Some remaining records failed to deliver to Kinesis Firehose for file {file_name}")
+            else:
+                print(f"All remaining records delivered successfully for file {file_name}")
+
+    except ClientError as e:
+        print(f"Error creating Firehose record for file {file_name}: {e}")
+        raise
+
+# Retrieve messages from SQS queue
 def lambda_handler(event, context):
-    # Initialize S3 and SQS clients
-    s3 = boto3.client('s3')
-    sqs = boto3.client('sqs')
-
+    
     for record in event['Records']:
         try:
             # Get message body and extract file name
@@ -15,49 +72,19 @@ def lambda_handler(event, context):
             file_name = message_body['file_name']
             print(f"Processing file {file_name}")
 
-            # Check if file exists in destination bucket
-            if check_file_exists('raw-json-ecommerce-dataset-fiap-grupo-c', file_name.replace('.csv', '.json')):
-                print(f'File {file_name} already exists in the destination bucket')
-            else:
-                print(f"{file_name} does not exists in json bucket yet, let's create it!")
-                # Download CSV file from S3
-                csv_obj = s3.get_object(Bucket='raw-csv-ecommerce-dataset-fiap-grupo-c', Key=file_name)
-                print(f"{file_name} retrieved from bucket")
-                csv_data = csv_obj['Body'].read().decode('utf-8')
-
-                # Convert CSV to JSON
-                csv_reader = csv.DictReader(csv_data.splitlines())
-                json_data = json.dumps(list(csv_reader))
-                print(f"{file_name} converted to JSON")
-
-                # Upload JSON file to S3
-                s3.put_object(Bucket='raw-json-ecommerce-dataset-fiap-grupo-c', Key=file_name.replace('.csv', '.json'), Body=json_data)
-                print(f"{file_name} uploaded in JSON format")
-
-                # Delete message from SQS queue
-                sqs.delete_message(
-                    QueueUrl='https://sqs.us-east-2.amazonaws.com/785163354234/csv-to-json',
-                    ReceiptHandle=record['receiptHandle']
-                )
-                print(f"{file_name} message deleted")
-
-                # Print success message
-                print(f"Successfully completed the process for {file_name}")
-        except Exception as e:
-            # Print error message
-            print(f"Error processing {file_name}: {e}")
+            # Create Firehose record for the file
+            create_firehose_records('raw-json-ecommerce-dataset-fiap-grupo-c', file_name)
+            print(f'{file_name} uploaded to the bucket')
 
             # Delete message from SQS queue
             sqs.delete_message(
-                QueueUrl='https://sqs.us-east-2.amazonaws.com/785163354234/csv-to-json',
+                QueueUrl='https://sqs.us-east-2.amazonaws.com/785163354234/json-to-firehose',
                 ReceiptHandle=record['receiptHandle']
             )
+        
+            print(f'{file_name} was deleted from the queue')
+        except Exception as e:
+            print(f"Error processing message: {e}")
 
-    print("All Files Uploaded!")
 
-def check_file_exists(bucket, key):
-    try:
-        s3.head_object(Bucket=bucket, Key=key)
-        return True
-    except:
-        return False
+print("Process finished")
