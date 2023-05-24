@@ -4,11 +4,11 @@
 
 If you keep an eye on the console while running the script, you should be able to see the messages in action inside SQS:
 
-![queues](imgs/queues_example.png)
+![queues](./imgs/queues_example.png)
 
 
 3. Run the script that listens to the SQS queue and to get files from the JSON bucket and upload them to the destination Firehose bucket: python sender-json-to-firehose.py
 
 You should be able to see the files inside the end bucket as in the print below:
 
-![firehose](imgs/firehose_data.png)
+![firehose](./imgs/firehose_data.png)
